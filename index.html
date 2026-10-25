@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="author" content="Mehmet Aydın Mert" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="scienceWiki — affeLab bilim ekosisteminin merkez üssü: disiplinlerarası kavram ağı, Planck'tan kozmosa ölçek cetveli, Türkçe bilim ansiklopedisi ve 5 interaktif laboratuvara canlı bağlantılar." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔭</text></svg>" />
+  <title>scienceWiki — affeLab Bilim Ekosistemi: Kavram Ağı, Ölçek Cetveli ve İnteraktif Ansiklopedi</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/shell.css" />
+  <link rel="stylesheet" href="css/graph.css" />
+  <link rel="stylesheet" href="css/articles.css" />
+  <link rel="stylesheet" href="css/scale.css" />
+  <link rel="stylesheet" href="css/timeline.css" />
+  <link rel="stylesheet" href="css/vault.css" />
+</head>
+<body>
+  <!-- ========================================================================
+       "BÜYÜK BİRLEŞME" PRELOADER — Kuark → Atom → DNA → Gauss → Galaksi → Bilim Küresi
+       ======================================================================== -->
+  <div id="swPreloader" role="status" aria-live="polite">
+    <canvas id="plCanvas"></canvas>
+    <div class="pl-stage-label" id="plStage"><span id="plStageName">Möbius topolojisi</span><small id="plStageScale">tek yüzlü yüzey · χ = 0</small></div>
+    <button class="pl-skip" id="plSkip" type="button">Geç ⏭</button>
+    <div class="pl-overlay">
+      <div class="pl-brand"><div class="pl-mark">sW</div><span class="pl-title pl-shine">scienceWiki</span></div>
+      <p class="pl-sub">affeLab Bilim Ekosisteminin Merkez Üssü · Kimya · Fizik · Biyoloji · İstatistik · Uzay</p>
+      <p class="pl-author" style="font-size:12px;color:#94a3b8;letter-spacing:.04em;margin-top:2px;">Geliştiren: <b style="color:#e2e8f0;">Mehmet Aydın Mert</b></p>
+      <div class="pl-progress-shell"><div id="plBar" class="pl-progress-bar"></div></div>
+      <div class="pl-status-row"><span id="plStepText">5 Bilim Laboratuvarı, Kozmik Ölçek Cetveli ve Çapraz Kavram Ağı senkronize ediliyor...</span><b id="plPctText">%0</b></div>
+    </div>
+  </div>
+  <script>
+    /* ------------------------------------------------------------------------
+       scienceWiki preloader — GPU parçacık dönüşümü
+       Möbius → DNA → Atom (10⁻¹⁰ m) → Güneş Sistemi (10¹³ m) → Samanyolu (10²¹ m)
+       → Karadelik. Her parçacığın (u, v, tohum, grup) parametreleri vertex
+       shader'da 6 şekle analitik olarak eşlenir; geçişlerde patlama + flaş,
+       eklemeli parıltı ve hareket izleri (preserveDrawingBuffer + soluklaştırma).
+       ------------------------------------------------------------------------ */
+    (function () {
+      try { if (localStorage.getItem('sciencewiki_theme') === 'light') document.documentElement.dataset.theme = 'light'; } catch (_) {}
+      var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var STAGES = [
+        ['Möbius topolojisi', 'tek yüzlü yüzey · χ = 0', 'Möbius topolojisi kuruluyor...'],
+        ['DNA çift sarmalı', 'yaşamın kodu · 2 nm', 'DNA çift sarmalı örülüyor...'],
+        ['Atom', '10⁻¹⁰ m · çekirdek ve orbitaller', 'Atom çekirdeği ve orbitaller hesaplanıyor...'],
+        ['Güneş Sistemi', '10¹³ m · Kepler yörüngeleri', 'Gezegen yörüngeleri çiziliyor...'],
+        ['Samanyolu', '10²¹ m · 200 milyar yıldız', 'Galaksi kolları ve kozmik ağ yükleniyor...'],
+        ['Karadelik', 'olay ufku · R = 2GM/c²', 'Olay ufku ve foton halkası hazır!']
+      ];
+      var T = reduce ? 0.45 : 1.05, HOLD = reduce ? 0.2 : 0.55, MORPH = T - HOLD;
+      var FREEZE = (location.search.match(/plstage=([\d.]+)/) || [])[1];  // test: ?plstage=2 → o aşamada dondur
+      var cv = document.getElementById('plCanvas');
+      var gl = cv.getContext('webgl', { alpha: false, antialias: false, preserveDrawingBuffer: true, premultipliedAlpha: false });
+      var raf = 0, t0 = performance.now(), mouse = [0, 0], dpr = Math.min(window.devicePixelRatio || 1, 1.6);
+      addEventListener('pointermove', function (e) { mouse[0] = e.clientX / innerWidth - 0.5; mouse[1] = e.clientY / innerHeight - 0.5; });
+
+      var VS = [
+        'precision highp float;',
+        'attribute vec4 aP; attribute vec2 aR;',
+        'uniform float uTime, uStage, uAspect, uPix, uBurst; uniform vec2 uMouse;',
+        'varying vec3 vCol; varying float vA;',
+        'const float PI = 3.14159265, TAU = 6.2831853;',
+        'vec3 rotY(vec3 p, float a){ float c=cos(a), s=sin(a); return vec3(c*p.x+s*p.z, p.y, -s*p.x+c*p.z); }',
+        'vec3 rotX(vec3 p, float a){ float c=cos(a), s=sin(a); return vec3(p.x, c*p.y-s*p.z, s*p.y+c*p.z); }',
+        'vec3 rotZ(vec3 p, float a){ float c=cos(a), s=sin(a); return vec3(c*p.x-s*p.y, s*p.x+c*p.y, p.z); }',
+        'vec3 ball(vec2 r, float s, float rad){ float th=r.x*TAU, ph=acos(2.0*r.y-1.0); return vec3(sin(ph)*cos(th), cos(ph), sin(ph)*sin(th))*rad*pow(s,0.34); }',
+        'vec3 shape(int k, vec4 P, vec2 R, float t, out vec3 col, out float a){',
+        '  float u=P.x, v=P.y, s=P.z, g=P.w; vec3 p; a=1.0;',
+        '  if(k==0){', /* Möbius */
+        '    float an=u*TAU + t*0.55; float w=v*0.62; float c=cos(0.5*an), sn=sin(0.5*an);',
+        '    p=vec3((1.75+w*c)*cos(an), w*sn, (1.75+w*c)*sin(an));',
+        '    float edge=step(0.98,abs(v));',
+        '    col=mix(mix(vec3(0.13,0.83,0.93), vec3(0.66,0.33,0.97), 0.5+0.5*sin(an)), vec3(0.85,0.97,1.0), edge*0.7);',
+        '    a=0.55+edge*0.9; p=rotX(rotY(p, t*0.35), 0.55); return p; }',
+        '  if(k==1){', /* DNA */
+        '    float y=(u-0.5)*3.3; float ph=u*TAU*2.0 + t*1.3;',
+        '    if(g<0.72){ float st=step(0.36,g); float an=ph+st*PI; float r=0.78+(s-0.5)*0.06;',
+        '      p=vec3(cos(an)*r, y, sin(an)*r); col=mix(vec3(0.22,0.74,0.97), vec3(0.75,0.52,0.99), st); a=0.95; }',
+        '    else { float n=floor(u*22.0)/22.0; float yy=(n-0.5)*3.3; float an=n*TAU*2.0 + t*1.3; float f=v*0.5+0.5;',
+        '      p=mix(vec3(cos(an)*0.78,yy,sin(an)*0.78), vec3(cos(an+PI)*0.78,yy,sin(an+PI)*0.78), f);',
+        '      col= fract(n*7.0)>0.5 ? vec3(0.98,0.75,0.14) : vec3(0.2,0.83,0.6); a=0.75; }',
+        '    p=rotZ(rotY(p, t*0.25), 0.35); return p; }',
+        '  if(k==2){', /* Atom */
+        '    if(g<0.16){ p=ball(R, s, 0.36); col=mix(vec3(0.98,0.45,0.09), vec3(0.94,0.27,0.27), step(0.5,fract(s*13.0))); a=1.1; }',
+        '    else { float o=floor((g-0.16)/0.84*3.0); float an=u*TAU + t*(1.8+o*0.6);',
+        '      vec3 q=vec3(cos(an)*2.0, sin(an)*0.7, 0.0) + vec3(R.x-0.5,R.y-0.5,s-0.5)*0.1;',
+        '      q=rotZ(q, o*PI/3.0); q=rotX(q, 0.9);',
+        '      float bead=pow(max(0.0, cos(an*1.0 - t*4.0 - o*2.0)), 30.0);',
+        '      col=mix(vec3(0.4,0.91,0.98), vec3(1.0), bead); a=0.42+bead*1.6; p=q; }',
+        '    p=rotY(p, t*0.3); return p; }',
+        '  if(k==3){', /* Güneş Sistemi */
+        '    if(g<0.14){ p=ball(R, s, 0.42); col=mix(vec3(1.0,0.9,0.5), vec3(0.98,0.6,0.1), s); a=1.2; }',
+        '    else { float o=floor((g-0.14)/0.86*6.0); float rad=0.75+o*0.36; float w=1.4/pow(rad,1.5);',
+        '      if(v>0.55){ float an=t*w + o*1.7; p=vec3(cos(an)*rad, 0.0, sin(an)*rad) + ball(R, s, 0.05+0.02*mod(o,3.0));',
+        '        col= o<0.5?vec3(0.75,0.75,0.75): o<1.5?vec3(0.98,0.78,0.36): o<2.5?vec3(0.25,0.62,1.0): o<3.5?vec3(0.95,0.36,0.25): o<4.5?vec3(0.99,0.73,0.48):vec3(0.99,0.9,0.6); a=1.25; }',
+        '      else { float an=u*TAU; p=vec3(cos(an)*rad, 0.0, sin(an)*rad); col=vec3(0.45,0.55,0.75); a=0.16; } }',
+        '    p=rotX(rotY(p, t*0.2), 0.42); return p; }',
+        '  if(k==4){', /* Samanyolu */
+        '    if(g<0.13){ p=ball(R, s, 0.42)*vec3(1.0,0.45,1.0); col=vec3(1.0,0.86,0.55); a=1.0; }',
+        '    else { float r=0.25+pow(u,0.75)*2.5; float arm=floor(fract(g*7.0)*2.0);',
+        '      float th=arm*PI + log(r+0.3)*2.7 + t*0.28 + (s-0.5)*(0.55/(r*0.6+0.3));',
+        '      p=vec3(cos(th)*r, v*0.05, sin(th)*r);',
+        '      col=mix(vec3(0.58,0.77,0.99), vec3(1.0,0.95,0.9), s*0.6); if(fract(s*31.0)>0.94) col=vec3(0.96,0.45,0.71);',
+        '      a=0.55 + 0.5*(1.0 - r/2.75); }',
+        '    p=rotX(p, 0.62); return p; }',
+        /* Karadelik: ince disk (kenardan görünüm) + bükülmüş halka + foton halkası */
+        '  float rr; float th;',
+        '  if(g<0.07){ th=u*TAU; rr=1.06+(s-0.5)*0.03; p=vec3(cos(th)*rr, sin(th)*rr, 0.3); col=vec3(1.0,0.95,0.86); a=1.4; return p; }',
+        '  if(g<0.34){ rr=1.22+pow(u,1.8)*1.3; th=s*TAU + t*1.1/pow(rr,1.5);',
+        '    p=vec3(cos(th)*rr, sin(th)*rr*0.92, -0.4); float tt=1.0-(rr-1.22)/1.3;',
+        '    col=mix(vec3(0.95,0.32,0.12), vec3(1.0,0.86,0.62), tt); a=(0.35+0.75*tt)*(0.75+0.35*sin(th)); return p; }',
+        '  rr=1.55+pow(u,1.4)*2.9; th=s*TAU + t*2.2/pow(rr,1.5); float tm=1.0-(rr-1.55)/2.9;',
+        '  p=vec3(cos(th)*rr, (v)*0.012*rr, sin(th)*rr);',
+        '  float dop=1.0+0.85*cos(th);',
+        '  col=mix(mix(vec3(0.9,0.2,0.08), vec3(1.0,0.6,0.2), tm), vec3(1.0,0.97,0.9), pow(tm,3.0)); col=mix(col, col*vec3(0.85,0.92,1.25), max(0.0,cos(th))*0.4);',
+        '  a=(0.3+0.9*tm)*dop; p=rotX(p, 0.16); return p;',
+        '}',
+        'void main(){',
+        '  float st=clamp(uStage,0.0,5.0); int k0=int(floor(st)); int k1=k0<5?k0+1:5; float f=st-floor(st);',
+        '  vec3 c0, c1; float a0, a1;',
+        '  vec3 p0=shape(k0, aP, aR, uTime, c0, a0); vec3 p1=shape(k1, aP, aR, uTime, c1, a1);',
+        '  vec3 p=mix(p0,p1,f); vec3 col=mix(c0,c1,f); float a=mix(a0,a1,f);',
+        '  vec3 dir=normalize(vec3(aR.x-0.5,aR.y-0.5,aP.z-0.5)+1e-3);',
+        '  float bf=sin(f*PI); p += dir*bf*(0.25+aP.z*0.7)*uBurst; p = rotY(p, bf*bf*1.4*uBurst);',
+        '  if(aR.y>0.955){ vec3 sd=normalize(vec3(aR.x-0.5,aP.x-0.5,aP.z-0.5)+1e-3); p=sd*18.0; col=vec3(0.75,0.85,1.0); a=0.25+0.35*(0.5+0.5*sin(uTime*3.0+aP.z*40.0)); }',
+        '  p=rotY(p, uMouse.x*0.5); p=rotX(p, uMouse.y*0.35);',
+        '  float zc=6.6-p.z; float F=2.15;',
+        '  vec2 sp=p.xy/zc;',
+        '  float bh=smoothstep(4.4,5.0,st);',
+        '  if(bh>0.0 && p.z<0.25 && length(sp)<1.0/6.6){ a*=mix(1.0, 0.0, bh); }',
+        '  float tw=0.75+0.25*sin(uTime*(3.0+aP.z*6.0)+aP.x*60.0);',
+        '  gl_Position=vec4(p.x*F/uAspect, p.y*F + 0.17*zc, 0.0, zc);',
+        '  gl_PointSize=uPix*(2.2+aR.x*2.4)*tw*(6.6/zc)*(0.7+0.6*a);',
+        '  vCol=col; vA=a*(0.55+0.45*tw);',
+        '}'
+      ].join('\n');
+      var FS = [
+        'precision mediump float; varying vec3 vCol; varying float vA;',
+        'void main(){ vec2 c=gl_PointCoord-0.5; float d=length(c)*2.0; if(d>1.0) discard;',
+        '  float core=exp(-d*d*14.0); float halo=exp(-d*d*2.6)*0.32;',
+        '  gl_FragColor=vec4(vCol*(core*1.5+halo)*vA*0.62, 1.0); }'
+      ].join('\n');
+      var QVS = 'attribute vec2 q; varying vec2 vq; void main(){ vq=q; gl_Position=vec4(q,0.0,1.0); }';
+      var QFS = [
+        'precision mediump float; varying vec2 vq; uniform float uMode, uFlash, uAspect, uHole; uniform vec3 uTint;',
+        'void main(){ if(uMode<0.5){ gl_FragColor=vec4(0.024,0.031,0.051,0.2); return; }',
+        '  vec2 p=vec2(vq.x*uAspect, vq.y-0.17); float d=length(p);',
+        '  float g=exp(-d*d*2.4)*uFlash + exp(-abs(p.y)*26.0)*exp(-abs(p.x)*1.4)*uFlash*0.5;',
+        '  g*=mix(1.0, smoothstep(0.30,0.40,d), uHole);',
+        '  gl_FragColor=vec4(uTint*g, 1.0); }'
+      ].join('\n');
+
+      function prog(vs, fs) {
+        var p = gl.createProgram();
+        [[gl.VERTEX_SHADER, vs], [gl.FRAGMENT_SHADER, fs]].forEach(function (x) {
+          var s = gl.createShader(x[0]); gl.shaderSource(s, x[1]); gl.compileShader(s);
+          if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) console.warn('[scienceWiki preloader]', gl.getShaderInfoLog(s));
+          gl.attachShader(p, s);
+        });
+        gl.linkProgram(p);
+        return gl.getProgramParameter(p, gl.LINK_STATUS) ? p : null;
+      }
+
+      var ok = false, P, Q, N, uni = {}, qu = {}, qbuf;
+      if (gl) {
+        P = prog(VS, FS); Q = prog(QVS, QFS);
+        if (P && Q) {
+          ok = true;
+          N = innerWidth < 760 ? 12000 : 26000;
+          var ap = new Float32Array(N * 4), ar = new Float32Array(N * 2);
+          for (var i = 0; i < N; i++) {
+            var v = Math.random() < 0.26 ? (Math.random() < 0.5 ? -1 : 1) : Math.random() * 2 - 1;
+            ap[i * 4] = Math.random(); ap[i * 4 + 1] = v; ap[i * 4 + 2] = Math.random(); ap[i * 4 + 3] = Math.random();
+            ar[i * 2] = Math.random(); ar[i * 2 + 1] = Math.random();
+          }
+          var b1 = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b1); gl.bufferData(gl.ARRAY_BUFFER, ap, gl.STATIC_DRAW);
+          var b2 = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b2); gl.bufferData(gl.ARRAY_BUFFER, ar, gl.STATIC_DRAW);
+          P.b1 = b1; P.b2 = b2; P.aP = gl.getAttribLocation(P, 'aP'); P.aR = gl.getAttribLocation(P, 'aR');
+          ['uTime', 'uStage', 'uAspect', 'uPix', 'uBurst', 'uMouse'].forEach(function (n) { uni[n] = gl.getUniformLocation(P, n); });
+          qbuf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, qbuf); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+          Q.q = gl.getAttribLocation(Q, 'q');
+          ['uMode', 'uFlash', 'uAspect', 'uTint', 'uHole'].forEach(function (n) { qu[n] = gl.getUniformLocation(Q, n); });
+        }
+      }
+      var TINTS = [[0.4, 0.8, 1.0], [0.75, 0.55, 1.0], [1.0, 0.6, 0.3], [1.0, 0.85, 0.5], [0.6, 0.75, 1.0], [1.0, 0.7, 0.4]];
+      function size() {
+        var w = Math.floor(innerWidth * dpr), h = Math.floor(innerHeight * dpr);
+        if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; if (gl) { gl.viewport(0, 0, w, h); gl.clearColor(0.024, 0.031, 0.051, 1); gl.clear(gl.COLOR_BUFFER_BIT); } }
+      }
+      var ease = function (x) { return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+      var lastStage = -1, sm = [0, 0];
+      var nameEl = document.getElementById('plStageName'), scaleEl = document.getElementById('plStageScale'), stEl = document.getElementById('plStage');
+      var bar = document.getElementById('plBar'), stepTxt = document.getElementById('plStepText'), pct = document.getElementById('plPctText');
+      function frame() {
+        size();
+        var t = (performance.now() - t0) / 1000;
+        var k = Math.min(5, Math.floor(t / T)), local = t - k * T;
+        var f = k >= 5 ? 0 : ease(Math.min(1, Math.max(0, (local - HOLD) / MORPH)));
+        var stage = FREEZE != null ? Math.min(5, +FREEZE) : Math.min(5, k + f);
+        if (FREEZE != null) { k = Math.floor(stage); f = stage - k; }
+        var shown = Math.min(5, Math.round(stage));
+        if (shown !== lastStage) {
+          lastStage = shown;
+          nameEl.textContent = STAGES[shown][0]; scaleEl.textContent = STAGES[shown][1]; stepTxt.textContent = STAGES[shown][2];
+          stEl.classList.remove('pop'); void stEl.offsetWidth; stEl.classList.add('pop');
+        }
+        var prog01 = Math.min(1, t / (5 * T + 0.3));
+        bar.style.width = (prog01 * 100).toFixed(1) + '%'; pct.textContent = '%' + Math.round(prog01 * 100);
+        if (ok) {
+          sm[0] += (mouse[0] - sm[0]) * 0.05; sm[1] += (mouse[1] - sm[1]) * 0.05;
+          var aspect = cv.width / cv.height;
+          // 1) bir önceki kareyi soluklaştır → parlak hareket izleri
+          gl.enable(gl.BLEND);
+          gl.useProgram(Q); gl.bindBuffer(gl.ARRAY_BUFFER, qbuf); gl.enableVertexAttribArray(Q.q); gl.vertexAttribPointer(Q.q, 2, gl.FLOAT, false, 0, 0);
+          gl.uniform1f(qu.uAspect, aspect);
+          gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.uniform1f(qu.uMode, 0); gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+          // 2) dönüşüm flaşı
+          var flash = Math.pow(Math.sin(f * Math.PI), 3) * 0.55 + (k >= 5 ? 0.12 + 0.05 * Math.sin(t * 2) : 0);
+          if (flash > 0.01) {
+            var tint = TINTS[Math.min(5, k + (f > 0.5 ? 1 : 0))];
+            gl.blendFunc(gl.ONE, gl.ONE); gl.uniform1f(qu.uMode, 1); gl.uniform1f(qu.uFlash, flash * 0.35); gl.uniform1f(qu.uHole, Math.max(0, Math.min(1, stage - 4.4) / 0.6)); gl.uniform3f(qu.uTint, tint[0], tint[1], tint[2]);
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+          }
+          gl.disableVertexAttribArray(Q.q);
+          // 3) parçacıklar (eklemeli parıltı)
+          gl.useProgram(P); gl.blendFunc(gl.ONE, gl.ONE);
+          gl.bindBuffer(gl.ARRAY_BUFFER, P.b1); gl.enableVertexAttribArray(P.aP); gl.vertexAttribPointer(P.aP, 4, gl.FLOAT, false, 0, 0);
+          gl.bindBuffer(gl.ARRAY_BUFFER, P.b2); gl.enableVertexAttribArray(P.aR); gl.vertexAttribPointer(P.aR, 2, gl.FLOAT, false, 0, 0);
+          gl.uniform1f(uni.uTime, t); gl.uniform1f(uni.uStage, stage); gl.uniform1f(uni.uAspect, aspect);
+          gl.uniform1f(uni.uPix, dpr); gl.uniform1f(uni.uBurst, reduce ? 0 : 1); gl.uniform2f(uni.uMouse, sm[0], sm[1]);
+          gl.drawArrays(gl.POINTS, 0, N);
+          gl.disableVertexAttribArray(P.aP); gl.disableVertexAttribArray(P.aR);
+        }
+        raf = requestAnimationFrame(frame);
+      }
+      frame();
+
+      var loaded = false, minDone = false, hidden = false;
+      function hide(force) {
+        if (hidden || (!force && (!loaded || !minDone))) return;
+        hidden = true;
+        bar.style.width = '100%'; pct.textContent = '%100';
+        var pl = document.getElementById('swPreloader');
+        pl.classList.add('preloader-hide');
+        setTimeout(function () {
+          cancelAnimationFrame(raf);
+          var lose = gl && gl.getExtension('WEBGL_lose_context'); if (lose) lose.loseContext();
+          if (pl.parentNode) pl.parentNode.removeChild(pl);
+        }, 750);
+      }
+      if (FREEZE != null) return;
+      setTimeout(function () { minDone = true; hide(); }, (5 * T + (reduce ? 0.3 : 1.1)) * 1000);
+      addEventListener('load', function () { loaded = true; hide(); });
+      setTimeout(function () { hide(true); }, 11000);
+      document.getElementById('plSkip').addEventListener('click', function () { hide(true); });
+    })();
+  </script>
+
+  <!-- ========================================================================
+       ÜST ÇUBUK
+       ======================================================================== -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark" style="background:conic-gradient(from 200deg,#10b981,#00f2fe,#a855f7,#f59e0b,#f97316,#10b981);">sW</div>
+      <div>
+        <span class="brand-title" style="font-family:var(--display);">scienceWiki</span>
+        <span class="brand-ver">Mehmet Aydın Mert · <b id="articleCount">0</b> madde</span>
+      </div>
+    </div>
+    <nav class="main-nav" aria-label="scienceWiki bölümleri">
+      <button class="nav-tab active" data-view="graph">🕸️ Kavram Ağı</button>
+      <button class="nav-tab" data-view="scale">📏 Ölçek Cetveli</button>
+      <button class="nav-tab" data-view="articles">📚 Ansiklopedi</button>
+      <button class="nav-tab" data-view="timeline">🕰️ Bilim Tarihi</button>
+      <button class="nav-tab" data-view="vault">🧮 Sabitler & Denklemler</button>
+    </nav>
+    <div class="top-actions">
+      <button id="openPaletteBtn" class="icon-btn sw-search-btn" title="Kavram, bilim insanı, formül veya simülasyon ara">🔍 Ara <kbd>Ctrl K</kbd></button>
+      <button id="themeToggleBtn" class="icon-btn">☀️ Aydınlık</button>
+      <button id="fullscreenBtn" class="icon-btn" title="Tam ekran">⛶</button>
+    </div>
+  </header>
+
+  <!-- ========================================================================
+       GÖRÜNÜMLER
+       ======================================================================== -->
+  <section class="sw-view" data-view="graph">
+    <div id="launchpad" class="launchpad" aria-label="5 laboratuvar"></div>
+    <div class="sw-view-root" id="graphRoot"></div>
+  </section>
+  <section class="sw-view" data-view="scale" hidden><div class="sw-view-root"></div></section>
+  <section class="sw-view" data-view="articles" hidden><div class="sw-view-root"></div></section>
+  <section class="sw-view" data-view="timeline" hidden><div class="sw-view-root"></div></section>
+  <section class="sw-view" data-view="vault" hidden><div class="sw-view-root"></div></section>
+
+  <footer class="sw-footer">
+    <span>scienceWiki · <a href="#/articles">Ansiklopedi</a> · Laboratuvarlar:
+      <a href="#" data-open="affeLab">🧪 affeLab</a> ·
+      <a href="#" data-open="affePhysics">⚛️ affePhysics</a> ·
+      <a href="#" data-open="affeBio">🧬 affeBio</a> ·
+      <a href="#" data-open="affeStats">📊 affeStats</a> ·
+      <a href="#" data-open="affeSpace">🌌 affeSpace</a></span>
+    <span>Geliştiren: <a href="https://github.com/mehmetmert" target="_blank" rel="noopener">Mehmet Aydın Mert</a> · Açık kaynak · Türkçe bilim eğitimi</span>
+  </footer>
+
+  <!-- Laboratuvar canlı önizleme penceresi (iframe) -->
+  <div id="labModal" class="lab-modal-bg" hidden>
+    <div class="lab-modal-win" role="dialog" aria-label="Canlı simülasyon">
+      <div class="lab-modal-head">
+        <span id="labModalIcon" class="lab-modal-icon"></span>
+        <b id="labModalTitle"></b>
+        <select id="labModalModule" class="bio-select" aria-label="Modül seç"></select>
+        <a id="labModalFull" class="lp-btn primary" target="_blank" rel="noopener">Tam Ekran Laboratuvara Git ↗</a>
+        <button id="labModalClose" class="icon-btn">✕</button>
+      </div>
+      <iframe id="labModalFrame" title="Canlı simülasyon" allow="fullscreen; autoplay" loading="lazy"></iframe>
+      <div class="lab-modal-foot"><span id="labModalUrl"></span></div>
+    </div>
+  </div>
+
+  <!-- Ctrl+K Bilim Spotlight -->
+  <div id="palette" class="palette-bg" hidden>
+    <div class="palette-win" role="dialog" aria-label="Arama">
+      <div class="palette-head">🔍 <input id="paletteInput" type="text" placeholder="Kavram, bilim insanı, formül veya simülasyon ara… (ör. entropi, Planck, karadelik, Bayes)" autocomplete="off" /><kbd>Esc</kbd></div>
+      <div id="paletteList" class="palette-list"></div>
+      <div class="palette-foot"><span>↑↓ gezin</span><span>↵ aç</span><span>Ctrl K aç/kapat</span></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script src="config/labs.js"></script>
+  <script src="js/core.js"></script>
+  <script src="data/articles-0.js"></script>
+  <script src="data/articles-1.js"></script>
+  <script src="data/articles-2.js"></script>
+  <script src="js/view-graph.js"></script>
+  <script src="js/view-articles.js"></script>
+  <script src="js/view-scale.js"></script>
+  <script src="js/view-timeline.js"></script>
+  <script src="js/view-vault.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

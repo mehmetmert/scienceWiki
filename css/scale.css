@@ -1,0 +1,34 @@
+/* scienceWiki — Ölçek Cetveli */
+.sc-grid { grid-template-columns: 320px minmax(0, 1fr) 320px; }
+.sc-stage { background: radial-gradient(circle at 50% 45%, #0b1222 0%, #04060b 85%); }
+.sc-zval { font-family: var(--mono); color: var(--amber); font-size: 12px; }
+.sc-minmax { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 10px; color: var(--muted); }
+.sc-hint { font-size: 11.5px; color: var(--muted); line-height: 1.5; }
+.sc-readout { position: absolute; top: 12px; left: 14px; z-index: 3; pointer-events: none; display: flex; flex-direction: column; gap: 3px; text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9); }
+.sc-pow { font-family: var(--display); font-size: clamp(22px, 2.6vw, 34px); font-weight: 700; color: #f8fafc; letter-spacing: -0.01em; }
+.sc-pow small { font-family: var(--mono); font-size: 13px; color: var(--muted); font-weight: 600; margin-left: 6px; }
+.sc-human { font-size: 13px; color: #cbd5e1; }
+.sc-band { font-family: var(--mono); font-size: 11.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+.sc-bands { display: flex; flex-direction: column; gap: 8px; }
+.sc-bandcard { border-radius: 10px; padding: 8px 9px; border: 1px solid color-mix(in srgb, var(--c) 40%, transparent);
+  background: linear-gradient(120deg, color-mix(in srgb, var(--c) 12%, transparent), color-mix(in srgb, var(--c2) 8%, transparent)); display: flex; flex-direction: column; gap: 5px; }
+.sc-bandjump { text-align: left; display: flex; justify-content: space-between; align-items: baseline; gap: 6px; }
+.sc-bandjump b { font-size: 12.5px; color: var(--c); }
+.sc-bandjump small { font-family: var(--mono); font-size: 10px; color: var(--muted); white-space: nowrap; }
+.sc-bandjump:hover b { text-decoration: underline; }
+.sc-bandcard p { font-size: 11.3px; color: var(--muted); line-height: 1.45; }
+.sc-bandlinks { display: flex; flex-wrap: wrap; gap: 4px; }
+.sc-bandlinks .lp-btn { font-size: 10.5px; padding: 4px 8px; }
+.sc-objname { font-size: 18px; line-height: 1.2; }
+.sc-note { font-size: 12.5px; line-height: 1.55; color: var(--text); }
+.sc-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.sc-list { display: flex; flex-direction: column; gap: 4px; }
+.sc-item { display: flex; justify-content: space-between; gap: 8px; padding: 6px 8px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.07); background: rgba(255, 255, 255, 0.025); text-align: left; }
+.sc-item b { font-size: 12px; color: var(--c); }
+.sc-item small { font-family: var(--mono); font-size: 10.5px; color: var(--muted); white-space: nowrap; }
+.sc-item:hover { border-color: var(--c); }
+@media (max-width: 1220px) { .sc-grid { grid-template-columns: 290px minmax(0, 1fr); } }
+@media (max-width: 860px) { .sc-grid { grid-template-columns: 1fr; } }
+.sc-stage { justify-content: flex-start; }
+.sc-stage .stage-viewport { flex: 1 1 auto; min-height: min(72vh, 760px); }
+@media (max-width: 860px) { .sc-stage .stage-viewport { min-height: 62vh; } }
