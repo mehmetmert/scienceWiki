@@ -6,7 +6,7 @@
 
 scienceWiki bir "kavramlar listesi" değil, bir **bilgi ağıdır**. Karbon-14'e tıkladığınızda kimyacının izotopunu, fizikçinin beta bozunumunu, biyoloğun fosil tarihlemesini, istatistikçinin Poisson sürecini ve astrofizikçinin kozmik ışınlarını aynı anda görürsünüz. Ardından tek tıkla ilgili **canlı simülasyonu** sayfadan çıkmadan çalıştırırsınız.
 
-> 🌐 **Canlı demo:** [mehmetmert.github.io/sciencewiki](https://mehmetmert.github.io/sciencewiki/) *(yayın adresi kesinleşince güncellenecek)*
+> 🌐 **Canlı demo:** [mehmetmert.github.io/sciencewiki](https://mehmetmert.github.io/sciencewiki/)
 
 ---
 
